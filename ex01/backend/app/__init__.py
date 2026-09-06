@@ -3,15 +3,18 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+from langgraph.checkpoint.memory import InMemorySaver
 
 from app import api
 from app.api.docs import swagger_metadata
 from app.config import settings
+from app.core.weather.agent import build_weather_agent
 
 
 @asynccontextmanager
 async def default_lifespan(app: FastAPI):
-    # Startup hooks (scheduler, connections, ...) go here — none yet.
+    app.state.agent = build_weather_agent(InMemorySaver())
+
     try:
         yield
     finally:
@@ -40,7 +43,7 @@ def create_app(
     api.include_middlewares(app)
     api.include_exception_handlers(app)
 
-    if settings.env != 'development':
+    if settings.app_env != 'development':
         frontend_dist = (
             Path(__file__).resolve().parent.parent.parent / 'frontend' / 'dist'
         )

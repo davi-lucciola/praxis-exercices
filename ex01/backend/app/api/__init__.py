@@ -61,7 +61,7 @@ def include_middlewares(app: FastAPI) -> None:
         response.headers['X-Process-Time'] = f'{process_time:.3f}s'  # type: ignore
         return response  # type: ignore
 
-    if settings.env == 'development':
+    if settings.app_env == 'development':
         app.add_middleware(
             CORSMiddleware,
             allow_origins=['http://localhost:5173'],
