@@ -1,0 +1,33 @@
+services:
+  backend:
+    container_name: praxis-backend
+    build:
+      context: .
+      target: backend-dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - backend-venv:/app/.venv
+    working_dir: /app/backend
+    environment:
+      APP_ENV: development
+
+  frontend:
+    container_name: praxis-frontend
+    build:
+      context: .
+      target: frontend-dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - frontend-node-modules:/app/node_modules
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8000
+    depends_on:
+      - backend
+
+volumes:
+  backend-venv:
+  frontend-node-modules:
