@@ -9,5 +9,5 @@ def get_chat_model(model: str, temperature: float = 0) -> BaseChatModel:
         temperature=temperature,
         model_provider='openai',
         openai_api_key=llm_settings.openrouter_api_key,
-        openai_base_url=llm_settings.openrouter_api_url,
+        openai_api_base=llm_settings.openrouter_api_url,
     )
