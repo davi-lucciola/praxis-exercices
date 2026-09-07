@@ -1,6 +1,6 @@
 from langchain.tools import ToolRuntime, tool
 
-from app.core.weather.agent.context import WeatherContext
+from app.core.weather.agent.context import WeatherContext, resolve_weather_context
 from app.core.weather.schemas import WeatherOut
 
 
@@ -14,5 +14,5 @@ async def get_weather(city: str, runtime: ToolRuntime[WeatherContext]) -> Weathe
     Returns:
         WeatherOut: All weather information about the city
     """
-    ctx = runtime.context
-    return await ctx.weather_service.find_by_city(city)
+    ctx = resolve_weather_context(runtime)
+    return ctx.weather_service.find_by_city(city)
