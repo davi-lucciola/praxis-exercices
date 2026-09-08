@@ -29,6 +29,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:8000',
+      '/agent': process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:8000',
     },
   },
   test: {
