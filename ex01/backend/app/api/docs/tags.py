@@ -5,4 +5,8 @@ swagger_metadata: list[dict[str, Any]] = [
         'name': 'Health',
         'description': 'Service health checks.',
     },
+    {
+        'name': 'Agents',
+        'description': 'Streaming weather agent execution.',
+    },
 ]
