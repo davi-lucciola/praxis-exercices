@@ -1,49 +1,16 @@
-from typing import Optional
+from app.core.weather.agent.agent import WeatherAgent
+from app.core.weather.agent.dispatcher import StreamDispatcher, UnknownStreamType
+from app.core.weather.agent.graph import (
+    WeatherGraph,
+    build_weather_graph,
+    make_weather_agent,
+)
 
-from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.graph import END, START, MessagesState, StateGraph
-from langgraph.graph.state import CompiledStateGraph
-from langgraph.prebuilt import ToolNode, tools_condition
-from langgraph.runtime import Runtime
-
-from app.core.weather.agent.context import WeatherContext, resolve_weather_context
-from app.core.weather.agent.prompt import WEATHER_ASSISTANT
-from app.core.weather.agent.tools import get_weather
-
-type WeatherAgent = CompiledStateGraph[
-    MessagesState, WeatherContext, MessagesState, MessagesState
+__all__ = [
+    'StreamDispatcher',
+    'UnknownStreamType',
+    'WeatherAgent',
+    'WeatherGraph',
+    'build_weather_graph',
+    'make_weather_agent',
 ]
-
-TOOLS = [get_weather]
-
-
-async def assistant(
-    state: MessagesState, runtime: Runtime[WeatherContext]
-) -> MessagesState:
-    ctx = resolve_weather_context(runtime)
-    model = ctx.llm.bind_tools(TOOLS)
-
-    message = await model.ainvoke(
-        [('system', WEATHER_ASSISTANT)] + state.get('messages', [])
-    )
-
-    return {'messages': [message]}
-
-
-def build_weather_agent(
-    checkpointer: Optional[BaseCheckpointSaver] = None,
-) -> WeatherAgent:
-    builder = StateGraph(state_schema=MessagesState, context_schema=WeatherContext)
-
-    builder.add_node('assistant', assistant)
-    builder.add_node('tools', ToolNode(TOOLS))
-
-    builder.add_edge(START, 'assistant')
-    builder.add_conditional_edges('assistant', tools_condition, ['tools', END])
-    builder.add_edge('tools', 'assistant')
-
-    return builder.compile(checkpointer=checkpointer)
-
-
-def make_weather_agent():
-    return build_weather_agent()

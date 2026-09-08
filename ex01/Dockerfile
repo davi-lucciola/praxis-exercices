@@ -28,7 +28,7 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 COPY backend/pyproject.toml ./backend/
-RUN uv sync --frozen --package ebookium
+RUN uv sync --frozen --directory backend
 
 COPY backend/app ./backend/app
 

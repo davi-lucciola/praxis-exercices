@@ -9,40 +9,22 @@ from fastapi.testclient import TestClient
 
 from app import create_app
 from app.config import settings
-from app.core.weather.agent.context import WeatherContext as WeatherContextImpl
-from app.core.weather.dependencies import get_weather_agent, get_weather_context
+from app.core.weather.dependencies import get_weather_agent
 
 
 class FakeAgent:
-    events: tuple[dict[str, Any], ...] = (
-        {
-            'event': 'on_chat_model_stream',
-            'run_id': 'run-1',
-            'name': 'assistant',
-            'data': {'chunk': {'content': 'Nublado'}},
-        },
-        {
-            'event': 'on_tool_start',
-            'run_id': 'tool-1',
-            'name': 'get_weather',
-            'data': {'input': {'city': 'Recife'}},
-        },
-        {
-            'event': 'on_tool_end',
-            'run_id': 'tool-1',
-            'name': 'get_weather',
-            'data': {
-                'input': {'city': 'Recife'},
-                'output': {'temperature': 26},
-            },
-        },
+    frames: tuple[bytes, ...] = (
+        b'event: on_chat_model_stream\ndata: {"event":"on_chat_model_stream"}\n\n',
+        (
+            b'event: on_tool_start\n'
+            b'data: {"event":"on_tool_start","name":"get_weather"}\n\n'
+        ),
+        b'event: on_tool_end\ndata: {"event":"on_tool_end","name":"get_weather"}\n\n',
     )
 
-    async def astream_events(
-        self, *_args: Any, **_kwargs: Any
-    ) -> AsyncIterator[dict[str, Any]]:
-        for event in self.events:
-            yield event
+    async def execute(self, *_args: Any, **_kwargs: Any) -> AsyncIterator[bytes]:
+        for frame in self.frames:
+            yield frame
 
 
 @asynccontextmanager
@@ -54,14 +36,9 @@ def _fake_agent() -> FakeAgent:
     return FakeAgent()
 
 
-def _fake_context() -> WeatherContextImpl:
-    return WeatherContextImpl()
-
-
 def _client() -> TestClient:
     app = create_app(title=settings.title, lifespan=_lifespan)
     app.dependency_overrides[get_weather_agent] = _fake_agent
-    app.dependency_overrides[get_weather_context] = _fake_context
     return TestClient(app)
 
 
@@ -85,7 +62,7 @@ def _parse_sse(body: str) -> list[tuple[str, dict[str, Any]]]:
     return events
 
 
-def test_execute_stream_emits_sse_for_chat_and_weather_tool() -> None:
+def test_execute_stream_emits_sse_from_agent_execute() -> None:
     with _client() as client:
         response = client.post(
             '/agent/execute/stream',
@@ -104,7 +81,6 @@ def test_execute_stream_emits_sse_for_chat_and_weather_tool() -> None:
         'on_tool_end',
     ]
     assert events[1][1]['name'] == 'get_weather'
-    assert events[2][1]['data']['output']['temperature'] == 26
 
 
 def test_execute_stream_rejects_invalid_thread_id() -> None:

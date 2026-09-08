@@ -1,13 +1,8 @@
 import { AssistantMarkdown } from '@/components/chat/assistant-markdown'
-import type { ChatItem } from '@/lib/chat-reducer'
 import { cn } from '@/lib/utils'
 
-export function MessageBubble({
-  item,
-}: {
-  item: Extract<ChatItem, { kind: 'user' | 'assistant' }>
-}) {
-  const isUser = item.kind === 'user'
+export function MessageBubble({ kind, content }: { kind: 'user' | 'assistant'; content: string }) {
+  const isUser = kind === 'user'
 
   return (
     <div className={cn('flex w-full', isUser ? 'justify-end' : 'justify-start')}>
@@ -18,7 +13,7 @@ export function MessageBubble({
             'rounded-br-md bg-primary text-primary-foreground',
           )}
         >
-          {item.content}
+          {content}
         </p>
       ) : (
         <div
@@ -27,7 +22,7 @@ export function MessageBubble({
             'rounded-bl-md border border-border bg-card text-card-foreground',
           )}
         >
-          <AssistantMarkdown content={item.content} />
+          <AssistantMarkdown content={content} />
         </div>
       )}
     </div>

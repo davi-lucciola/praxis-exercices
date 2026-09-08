@@ -8,12 +8,15 @@ from langgraph.checkpoint.memory import InMemorySaver
 from app import api
 from app.api.docs import swagger_metadata
 from app.config import settings
-from app.core.weather.agent import build_weather_agent
+from app.core.weather.agent import WeatherAgent, build_weather_graph
+from app.core.weather.agent.context import create_weather_context
 
 
 @asynccontextmanager
 async def default_lifespan(app: FastAPI):
-    app.state.agent = build_weather_agent(InMemorySaver())
+    graph = build_weather_graph(InMemorySaver())
+    context = create_weather_context()
+    app.state.agent = WeatherAgent(graph=graph, context=context)
 
     try:
         yield

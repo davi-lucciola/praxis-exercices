@@ -1,10 +1,11 @@
 import { MessageBubble } from '@/components/chat/message-bubble'
-import { WeatherCard } from '@/components/chat/weather-card'
+import { renderBlock, Thinking } from '@/components/chat/renderers'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import type { ChatItem } from '@/lib/chat-reducer'
+import { foldEvents, isThinking } from '@/lib/blocks'
+import type { ChatTurn } from '@/lib/chat-reducer'
 
-export function MessageList({ items, isLoading }: { items: ChatItem[]; isLoading: boolean }) {
-  if (items.length === 0) {
+export function MessageList({ turns, isLoading }: { turns: ChatTurn[]; isLoading: boolean }) {
+  if (turns.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <p className="font-display text-4xl tracking-wide text-foreground uppercase">
@@ -17,14 +18,25 @@ export function MessageList({ items, isLoading }: { items: ChatItem[]; isLoading
     )
   }
 
+  const lastId = turns.at(-1)?.id
+
   return (
     <ScrollArea className="flex-1" aria-busy={isLoading}>
       <div className="flex flex-col gap-4 px-4 py-6">
-        {items.map((item) => {
-          if (item.kind === 'weather') {
-            return <WeatherCard key={item.id} item={item} />
+        {turns.map((turn) => {
+          if (turn.role === 'user') {
+            return <MessageBubble key={turn.id} kind="user" content={turn.content} />
           }
-          return <MessageBubble key={item.id} item={item} />
+
+          const blocks = foldEvents(turn.events)
+          const live = isLoading && turn.id === lastId
+
+          return (
+            <div key={turn.id} className="flex flex-col gap-3">
+              {blocks.map(renderBlock)}
+              {live && isThinking(blocks) ? <Thinking /> : null}
+            </div>
+          )
         })}
       </div>
     </ScrollArea>

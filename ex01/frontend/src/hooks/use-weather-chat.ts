@@ -1,13 +1,18 @@
 import { useCallback, useReducer, useRef, useState } from 'react'
 
 import { streamAgentExecute } from '@/lib/agent-stream'
-import { type AgentExecuteIn, extractTextContent, normalizeSubmitMessages } from '@/lib/agent-types'
+import {
+  type AgentExecuteIn,
+  extractTextContent,
+  normalizeSubmitMessages,
+  UnknownEventError,
+} from '@/lib/agent-types'
 import { chatReducer } from '@/lib/chat-reducer'
 import { createId } from '@/lib/utils'
 
 export function useWeatherChat() {
   const [threadId, setThreadId] = useState(createId)
-  const [items, dispatch] = useReducer(chatReducer, [])
+  const [turns, dispatch] = useReducer(chatReducer, [])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -39,6 +44,7 @@ export function useWeatherChat() {
       abortRef.current = controller
 
       dispatch({ type: 'addUser', id: createId(), content })
+      dispatch({ type: 'startAssistant', id: createId() })
       setError(null)
       setIsLoading(true)
 
@@ -54,7 +60,11 @@ export function useWeatherChat() {
           return
         }
         const message =
-          cause instanceof Error ? cause.message : 'Não foi possível falar com o assistente.'
+          cause instanceof UnknownEventError
+            ? cause.message
+            : cause instanceof Error
+              ? cause.message
+              : 'Não foi possível falar com o assistente.'
         setError(message)
       } finally {
         if (abortRef.current === controller) {
@@ -66,5 +76,5 @@ export function useWeatherChat() {
     [isLoading, threadId],
   )
 
-  return { threadId, items, isLoading, error, submit, newChat }
+  return { threadId, turns, isLoading, error, submit, newChat }
 }

@@ -12,16 +12,66 @@ export type AgentExecuteIn = {
   messages: LangChainMessage | LangChainMessage[]
 }
 
-export type AgentStreamEvent = {
-  event: string
+export const EVENTS = [
+  'on_chat_model_start',
+  'on_chat_model_stream',
+  'on_chat_model_end',
+  'on_tool_start',
+  'on_tool_end',
+  'on_tool_error',
+] as const
+
+export type EventType = (typeof EVENTS)[number]
+
+export type ToolCall = {
+  name: string
+  args: Record<string, unknown>
+  id?: string
+}
+
+/** LangChain `dumps` constructor payload (and flattened cousins). */
+export type LcMessage = {
+  lc?: number
+  type?: string
+  id?: string[]
+  content?: unknown
+  kwargs?: {
+    content?: unknown
+    type?: string
+    name?: string
+    tool_calls?: ToolCall[]
+  }
+}
+
+export type StreamEventData = {
+  chunk?: LcMessage
+  input?: unknown
+  output?: unknown
+  error?: unknown
+  [key: string]: unknown
+}
+
+/** Runnable StreamEvent. SSE `data` is this object, complete. */
+export type StreamEvent = {
+  event?: string
   name?: string
   run_id?: string
-  data?: {
-    chunk?: { content?: unknown }
-    input?: { city?: unknown } & Record<string, unknown>
-    output?: unknown
-    error?: unknown
+  data?: StreamEventData
+  [key: string]: unknown
+}
+
+/** `at` is stamped by the client when the frame lands (for elapsed time). */
+export type AgentEvent = { type: EventType; data: StreamEvent; at?: number }
+
+export class UnknownEventError extends Error {
+  constructor(type: string) {
+    super(`unknown event type: ${type}`)
+    this.name = 'UnknownEventError'
   }
+}
+
+export function isEventType(type: string): type is EventType {
+  return (EVENTS as readonly string[]).includes(type)
 }
 
 export function normalizeSubmitMessages(
@@ -30,7 +80,7 @@ export function normalizeSubmitMessages(
   return Array.isArray(messages) ? messages : [messages]
 }
 
-export function extractTextContent(content: unknown): string {
+export function contentText(content: unknown): string {
   if (typeof content === 'string') {
     return content
   }
@@ -44,66 +94,42 @@ export function extractTextContent(content: unknown): string {
       if (typeof block === 'string') {
         return block
       }
-      if (block && typeof block === 'object' && 'text' in block && typeof block.text === 'string') {
-        return block.text
+      if (block && typeof block === 'object' && 'text' in block) {
+        const text = (block as { text?: unknown }).text
+        return typeof text === 'string' ? text : ''
       }
       return ''
     })
     .join('')
 }
 
-export function readCity(input: unknown): string {
-  if (input && typeof input === 'object' && 'city' in input) {
-    const city = (input as { city: unknown }).city
-    if (typeof city === 'string') {
-      return city
-    }
-  }
-  return ''
-}
-
-const PYDANTIC_TEMPERATURE = /temperature\s*=\s*(-?\d+(?:\.\d+)?)/i
-
-export function readTemperature(output: unknown): number | undefined {
-  if (typeof output === 'number') {
-    return Number.isFinite(output) ? output : undefined
-  }
-
-  if (typeof output === 'string') {
-    try {
-      return readTemperature(JSON.parse(output))
-    } catch {
-      const parsed = Number(output)
-      if (Number.isFinite(parsed)) {
-        return parsed
-      }
-
-      const match = output.match(PYDANTIC_TEMPERATURE)
-      return match ? Number(match[1]) : undefined
-    }
-  }
-
-  if (Array.isArray(output)) {
-    for (const item of output) {
-      const temperature = readTemperature(item)
-      if (temperature !== undefined) {
-        return temperature
-      }
-    }
+export function asMessage(value: unknown): LcMessage | undefined {
+  if (!value || typeof value !== 'object') {
     return undefined
   }
+  return value as LcMessage
+}
 
-  if (output && typeof output === 'object') {
-    if ('temperature' in output) {
-      return readTemperature((output as { temperature: unknown }).temperature)
-    }
-    if ('content' in output) {
-      return readTemperature((output as { content: unknown }).content)
-    }
-    if ('output' in output) {
-      return readTemperature((output as { output: unknown }).output)
-    }
+export function messageText(message: unknown): string {
+  if (typeof message === 'string') {
+    return message
   }
 
-  return undefined
+  const parsed = asMessage(message)
+  if (!parsed) {
+    return ''
+  }
+  if (parsed.kwargs && 'content' in parsed.kwargs) {
+    return contentText(parsed.kwargs.content)
+  }
+  return contentText(parsed.content)
+}
+
+export function messageToolCalls(message: unknown): ToolCall[] {
+  const calls = asMessage(message)?.kwargs?.tool_calls
+  return Array.isArray(calls) ? calls : []
+}
+
+export function extractTextContent(content: unknown): string {
+  return contentText(content)
 }
