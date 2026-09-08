@@ -15,4 +15,4 @@ async def get_weather(city: str, runtime: ToolRuntime[WeatherContext]) -> Weathe
         WeatherOut: All weather information about the city
     """
     ctx = resolve_weather_context(runtime)
-    return ctx.weather_service.find_by_city(city)
+    return await ctx.weather_service.find_by_city(city)
