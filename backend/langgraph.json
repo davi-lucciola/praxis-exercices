@@ -1,0 +1,9 @@
+{
+    "$schema": "https://langgra.ph/schema.json",
+    "graphs": {
+      "agent": "app.core.weather.agent:make_weather_agent"
+    },
+    "env": ".env",
+    "python_version": "3.13",
+    "dependencies": ["."]
+  }

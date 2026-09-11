@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Barlow Condensed", "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: #f0f9ff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #0284c7;
+  --primary-foreground: #f8fafc;
+  --secondary: #e0f2fe;
+  --secondary-foreground: #0f172a;
+  --muted: #e0f2fe;
+  --muted-foreground: #475569;
+  --accent: #f59e0b;
+  --accent-foreground: #0f172a;
+  --destructive: #dc2626;
+  --border: #bae6fd;
+  --input: #bae6fd;
+  --ring: #0284c7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b1220;
+    --foreground: #e2e8f0;
+    --card: #111827;
+    --card-foreground: #e2e8f0;
+    --popover: #111827;
+    --popover-foreground: #e2e8f0;
+    --primary: #38bdf8;
+    --primary-foreground: #0b1220;
+    --secondary: #1e293b;
+    --secondary-foreground: #e2e8f0;
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
+    --accent: #fbbf24;
+    --accent-foreground: #0b1220;
+    --destructive: #f87171;
+    --border: #1e3a5f;
+    --input: #1e3a5f;
+    --ring: #38bdf8;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    margin: 0;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .wx-desk {
+    background-image:
+      linear-gradient(180deg, color-mix(in oklab, var(--primary) 12%, transparent), transparent 32%),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 47px,
+        color-mix(in oklab, var(--primary) 10%, transparent) 48px
+      );
+  }
+}
